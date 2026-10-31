@@ -47,16 +47,33 @@ function listing(){
  const bInfo=`<div class="attribute"><strong>상품 기본 정보</strong><span>브랜드: 아디다스</span><span>상품: 검정색 집업</span><span>사이즈: 95(M)</span><span>구매 시기: 2025년 9월</span><span>사용 기간: 약 1년</span><span>가격: 30,000원</span></div>
  <div class="attribute"><strong>상품 상태</strong><span>전체적으로 상태 좋음</span><span>소매 쪽 사용감 있음</span><span>앞부분 사용감 있음</span></div>
  <div class="attribute"><strong>거래 정보</strong><span>직거래: 신설동역</span><span>택배 거래: 가능 (3,000원 추가)</span></div>`;
- const embed=participant.grp==='A'
- ?'https://embed.figma.com/design/kk7rWoDRjkSej20gShtms3/%EC%9E%90%EA%B7%B9%EB%AC%BC?node-id=0-1&embed-host=share'
- :'https://embed.figma.com/design/kk7rWoDRjkSej20gShtms3/%EC%9E%90%EA%B7%B9%EB%AC%BC?node-id=3-1018&embed-host=share';
- html(`<div class="market-head"><span class="tag">연구용 가상 게시글</span><span class="condition">${participant.grp==='A'?'일반 게시글':'상품 정보'}</span></div>
+ const isA=participant.grp==='A';
+ const gallery=`<div class="photo-gallery" aria-label="상품 사진">
+   <div class="gallery-stage"><img id="galleryImage" src="assets/product-full.png" alt="아디다스 집업 전체 사진"></div>
+   <div class="gallery-controls"><button type="button" id="prevPhoto" aria-label="이전 사진">이전</button><span id="galleryCount">1 / 3</span><button type="button" id="nextPhoto" aria-label="다음 사진">다음</button></div>
+ </div>`;
+ const structuredPhotos=`<div class="product-main-photo"><img src="assets/product-full.png" alt="상품 전체 사진"></div>
+ <div class="defect-actions"><p class="defect-heading">하자 사진 확인</p><button type="button" class="defect-button" data-photo="front">앞부분 하자 사진 보기</button><button type="button" class="defect-button" data-photo="sleeve">소매 하자 사진 보기</button></div>
+ <div class="photo-modal" id="photoModal" aria-hidden="true"><div class="photo-modal-backdrop" data-close-modal></div><div class="photo-modal-dialog" role="dialog" aria-modal="true" aria-label="하자 사진"><button type="button" class="modal-close" data-close-modal aria-label="닫기">×</button><h2 id="modalTitle">하자 사진</h2><img id="modalImage" src="" alt="확대된 하자 사진"></div></div>`;
+ html(`<div class="market-head"><span class="tag">연구용 가상 게시글</span><span class="condition">${isA?'일반 게시글':'상품 정보'}</span></div>
  <h1 class="listing-title">아디다스 검정색 집업 판매합니다</h1>
  <div class="price">30,000원</div>
- <div class="figma-wrap"><iframe title="${participant.grp}집단 자극물 디자인" src="${embed}" allowfullscreen loading="eager"></iframe></div>
- <p class="muted figma-note">위 화면은 연구용 게시글 디자인입니다. 아래 상품 정보도 함께 확인해 주세요.</p>
- ${participant.grp==='A'?`<div class="listing">${aText}</div>`:`${bInfo}`}
+ ${isA?gallery:structuredPhotos}
+ ${isA?`<div class="listing">${aText}</div>`:`${bInfo}`}
  <form id="listingForm"><div class="notice">상품 정보를 충분히 확인해 주세요. 다음 단계로 이동하면 거래글을 다시 볼 수 없습니다.</div><button type="submit">확인 완료 · 다음 단계</button></form>`);
+ if(isA){
+   const photos=[['assets/product-full.png','아디다스 집업 전체 사진'],['assets/front-defect.png','앞부분 하자 사진'],['assets/sleeve-defect.png','소매 하자 사진']];let current=0;
+   const showPhoto=()=>{const im=document.getElementById('galleryImage');im.src=photos[current][0];im.alt=photos[current][1];document.getElementById('galleryCount').textContent=(current+1)+' / '+photos.length};
+   document.getElementById('prevPhoto').onclick=()=>{current=(current+photos.length-1)%photos.length;showPhoto()};
+   document.getElementById('nextPhoto').onclick=()=>{current=(current+1)%photos.length;showPhoto()};
+ }
+ if(!isA){
+   const modal=document.getElementById('photoModal');
+   const close=()=>{modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.getElementById('modalImage').src=''};
+   app.querySelectorAll('[data-photo]').forEach(btn=>btn.addEventListener('click',()=>{const front=btn.dataset.photo==='front';document.getElementById('modalTitle').textContent=front?'앞부분 하자':'소매 하자';document.getElementById('modalImage').src=front?'assets/front-defect.png':'assets/sleeve-defect.png';document.getElementById('modalImage').alt=front?'앞부분 하자 사진':'소매 하자 사진';modal.classList.add('open');modal.setAttribute('aria-hidden','false')}));
+   modal.querySelectorAll('[data-close-modal]').forEach(el=>el.addEventListener('click',close));
+   addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))close()},{once:false});
+ }
  document.getElementById('listingForm').onsubmit=e=>{e.preventDefault();advance(1,{elapsed:Math.min(3600,Math.floor((Date.now()-startTime)/1000))})}
 }
 function fields(key,heading,opts){return `<fieldset><legend>${heading}</legend>${opts.map((x,i)=>`<label class="option"><input type="radio" name="${key}" value="${i}" required> ${i+1}. ${x}</label>`).join('')}</fieldset>`}
